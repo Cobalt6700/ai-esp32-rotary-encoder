@@ -87,6 +87,7 @@ public:
 	void setup(void (*ISR_callback)(void), void (*ISR_button)(void));
 	void begin();
 	void reset(long newValue = 0);
+	int32_t readAndReset();
 	void enable();
 	void disable();
 	long readEncoder();

@@ -2,6 +2,20 @@
 //
 //
 
+
+/*
+
+24/09/23
+
+Had a go at combining ASesp32 into this lib. 
+
+Ran out of knowlage at brining in the setup function - plus it looks like AI needs to read 
+encoderchanged() to get an update. 
+
+Proboably easier to work out how to use AI instead of porting this accross. 
+
+*/
+
 #if defined(ESP8266)
 #else
 #include "esp_log.h"
@@ -198,6 +212,25 @@ AiEsp32RotaryEncoder::AiEsp32RotaryEncoder(uint8_t encoder_APin, uint8_t encoder
 #endif
 }
 
+AiEsp32RotaryEncoder::AiEsp32RotaryEncoder(uint8_t encoder_APin, uint8_t encoder_BPin)
+{
+	this->old_AB = 0;
+
+	this->encoderAPin = encoder_APin;
+	this->encoderBPin = encoder_BPin;
+	this->encoderButtonPin = -1;
+	this->encoderVccPin = -1;
+	this->encoderSteps = 1;
+
+#if defined(ESP8266)
+	pinMode(this->encoderAPin, INPUT_PULLUP);
+	pinMode(this->encoderBPin, INPUT_PULLUP);
+#else
+	pinMode(this->encoderAPin, (areEncoderPinsPulldownforEsp32? INPUT_PULLDOWN:INPUT_PULLUP));
+	pinMode(this->encoderBPin, (areEncoderPinsPulldownforEsp32? INPUT_PULLDOWN:INPUT_PULLUP));
+#endif
+}
+
 void AiEsp32RotaryEncoder::setBoundaries(long minEncoderValue, long maxEncoderValue, bool circleValues)
 {
 	this->_minEncoderValue = minEncoderValue * this->encoderSteps;
@@ -209,11 +242,20 @@ void AiEsp32RotaryEncoder::setBoundaries(long minEncoderValue, long maxEncoderVa
 long AiEsp32RotaryEncoder::readEncoder()
 {
 	//return (this->encoder0Pos / this->encoderSteps);
-	if ((this->encoder0Pos/ this->encoderSteps) > (this->_maxEncoderValue/ this->encoderSteps))
-		return this->_maxEncoderValue/ this->encoderSteps;
- 	if ((this->encoder0Pos/ this->encoderSteps) < (this->_minEncoderValue/ this->encoderSteps))
- 		return this->_minEncoderValue/ this->encoderSteps;
-	return (this->encoder0Pos / this->encoderSteps);
+	if(this->encoderSteps == 1){
+		if (this->encoder0Pos > this->_maxEncoderValue)
+			return this->_maxEncoderValue;
+		if (this->encoder0Pos < this->_minEncoderValue)
+			return this->_minEncoderValue;
+		return this->encoder0Pos;
+	}
+	else {
+		if ((this->encoder0Pos/ this->encoderSteps) > (this->_maxEncoderValue/ this->encoderSteps))
+			return this->_maxEncoderValue/ this->encoderSteps;
+		if ((this->encoder0Pos/ this->encoderSteps) < (this->_minEncoderValue/ this->encoderSteps))
+			return this->_minEncoderValue/ this->encoderSteps;
+		return (this->encoder0Pos / this->encoderSteps);
+	}
 }
 
 void AiEsp32RotaryEncoder::setEncoderValue(long newValue)
@@ -276,7 +318,7 @@ ButtonState AiEsp32RotaryEncoder::currentButtonState()
 
 ButtonState AiEsp32RotaryEncoder::readButtonState()
 {
-	ButtonState _buttonState = buttonState;
+	// ButtonState _buttonState = buttonState;
 	// buttonState =
 	return buttonState;
 }
@@ -292,6 +334,23 @@ void AiEsp32RotaryEncoder::reset(long newValue_)
 		this->encoder0Pos = this->_circleValues ? this->_maxEncoderValue : this->_minEncoderValue;
 
 	this->lastReadEncoder0Pos = this->readEncoder();
+}
+
+int32_t AiEsp32RotaryEncoder::readAndReset() 
+{
+	static long newValue_ = 0;
+	//newValue_ = newValue_ * this->encoderSteps;
+	int32_t returnPos = this->encoder0Pos;
+	this->encoder0Pos = newValue_ +this->correctionOffset;
+	this->lastReadEncoder0Pos = this->encoder0Pos;
+	if (this->encoder0Pos > this->_maxEncoderValue)
+		this->encoder0Pos = this->_circleValues ? this->_minEncoderValue : this->_maxEncoderValue;
+	if (this->encoder0Pos < this->_minEncoderValue)
+		this->encoder0Pos = this->_circleValues ? this->_maxEncoderValue : this->_minEncoderValue;
+
+	this->lastReadEncoder0Pos = this->readEncoder();
+
+	return returnPos;
 }
 
 void AiEsp32RotaryEncoder::enable()
