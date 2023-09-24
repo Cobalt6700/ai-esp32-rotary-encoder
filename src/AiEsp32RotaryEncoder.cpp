@@ -152,6 +152,7 @@ optimistic view was that most of the time encoder0Pos values will be near to N*e
 #endif
 }
 
+
 #if defined(ESP8266)
 ICACHE_RAM_ATTR void AiEsp32RotaryEncoder::readButton_ISR()
 #else
@@ -193,25 +194,26 @@ void IRAM_ATTR AiEsp32RotaryEncoder::readButton_ISR()
 #endif
 }
 
-AiEsp32RotaryEncoder::AiEsp32RotaryEncoder(uint8_t encoder_APin, uint8_t encoder_BPin, int encoder_ButtonPin, int encoder_VccPin, uint8_t encoderSteps)
-{
-	this->old_AB = 0;
+// AiEsp32RotaryEncoder::AiEsp32RotaryEncoder(uint8_t encoder_APin, uint8_t encoder_BPin, int encoder_ButtonPin, int encoder_VccPin, uint8_t encoderSteps)
+// {
+// 	this->old_AB = 0;
 
-	this->encoderAPin = encoder_APin;
-	this->encoderBPin = encoder_BPin;
-	this->encoderButtonPin = encoder_ButtonPin;
-	this->encoderVccPin = encoder_VccPin;
-	this->encoderSteps = encoderSteps;
+// 	this->encoderAPin = encoder_APin;
+// 	this->encoderBPin = encoder_BPin;
+// 	this->encoderButtonPin = encoder_ButtonPin;
+// 	this->encoderVccPin = encoder_VccPin;
+// 	this->encoderSteps = encoderSteps;
 
-#if defined(ESP8266)
-	pinMode(this->encoderAPin, INPUT_PULLUP);
-	pinMode(this->encoderBPin, INPUT_PULLUP);
-#else
-	pinMode(this->encoderAPin, (areEncoderPinsPulldownforEsp32? INPUT_PULLDOWN:INPUT_PULLUP));
-	pinMode(this->encoderBPin, (areEncoderPinsPulldownforEsp32? INPUT_PULLDOWN:INPUT_PULLUP));
-#endif
-}
+// #if defined(ESP8266)
+// 	pinMode(this->encoderAPin, INPUT_PULLUP);
+// 	pinMode(this->encoderBPin, INPUT_PULLUP);
+// #else
+// 	pinMode(this->encoderAPin, (areEncoderPinsPulldownforEsp32? INPUT_PULLDOWN:INPUT_PULLUP));
+// 	pinMode(this->encoderBPin, (areEncoderPinsPulldownforEsp32? INPUT_PULLDOWN:INPUT_PULLUP));
+// #endif
+// }
 
+// REWRITTEN Button and vcc to be removed. 
 AiEsp32RotaryEncoder::AiEsp32RotaryEncoder(uint8_t encoder_APin, uint8_t encoder_BPin)
 {
 	this->old_AB = 0;
@@ -231,6 +233,7 @@ AiEsp32RotaryEncoder::AiEsp32RotaryEncoder(uint8_t encoder_APin, uint8_t encoder
 #endif
 }
 
+// Currently not USED
 void AiEsp32RotaryEncoder::setBoundaries(long minEncoderValue, long maxEncoderValue, bool circleValues)
 {
 	this->_minEncoderValue = minEncoderValue * this->encoderSteps;
@@ -239,6 +242,7 @@ void AiEsp32RotaryEncoder::setBoundaries(long minEncoderValue, long maxEncoderVa
 	this->_circleValues = circleValues;
 }
 
+// USED
 long AiEsp32RotaryEncoder::readEncoder()
 {
 	//return (this->encoder0Pos / this->encoderSteps);
@@ -258,11 +262,13 @@ long AiEsp32RotaryEncoder::readEncoder()
 	}
 }
 
+// USED
 void AiEsp32RotaryEncoder::setEncoderValue(long newValue)
 {
 	reset(newValue);
 }
 
+// Not USED - EB_LIB covers
 long AiEsp32RotaryEncoder::encoderChanged()
 {
 	long _encoder0Pos = readEncoder();
@@ -273,6 +279,7 @@ long AiEsp32RotaryEncoder::encoderChanged()
 	return encoder0Diff;
 }
 
+// USED
 void AiEsp32RotaryEncoder::setup(void (*ISR_callback)(void), void (*ISR_button)(void))
 {
 	attachInterrupt(digitalPinToInterrupt(this->encoderAPin), ISR_callback, CHANGE);
@@ -282,12 +289,14 @@ void AiEsp32RotaryEncoder::setup(void (*ISR_callback)(void), void (*ISR_button)(
 	// attachInterrupt(digitalPinToInterrupt(this->encoderButtonPin), ISR_button, CHANGE);
 }
 
+// USED
 void AiEsp32RotaryEncoder::setup(void (*ISR_callback)(void))
 {
 	attachInterrupt(digitalPinToInterrupt(this->encoderAPin), ISR_callback, CHANGE);
 	attachInterrupt(digitalPinToInterrupt(this->encoderBPin), ISR_callback, CHANGE);
 }
 
+// USED
 void AiEsp32RotaryEncoder::begin()
 {
 	this->lastReadEncoder0Pos = 0;
@@ -311,11 +320,13 @@ void AiEsp32RotaryEncoder::begin()
 	}
 }
 
+// NOT USED - TO BE REMOVED
 ButtonState AiEsp32RotaryEncoder::currentButtonState()
 {
 	return buttonState;
 }
 
+// NOT USED - TO BE REMOVED
 ButtonState AiEsp32RotaryEncoder::readButtonState()
 {
 	// ButtonState _buttonState = buttonState;
@@ -323,6 +334,7 @@ ButtonState AiEsp32RotaryEncoder::readButtonState()
 	return buttonState;
 }
 
+// USED
 void AiEsp32RotaryEncoder::reset(long newValue_)
 {
 	newValue_ = newValue_ * this->encoderSteps;
@@ -336,6 +348,7 @@ void AiEsp32RotaryEncoder::reset(long newValue_)
 	this->lastReadEncoder0Pos = this->readEncoder();
 }
 
+// NEW FUNCTION
 int32_t AiEsp32RotaryEncoder::readAndReset() 
 {
 	static long newValue_ = 0;
@@ -353,15 +366,18 @@ int32_t AiEsp32RotaryEncoder::readAndReset()
 	return returnPos;
 }
 
+// NOT CURRENTLY USED
 void AiEsp32RotaryEncoder::enable()
 {
 	this->isEnabled = true;
 }
+// NOT CURRENTLY USED
 void AiEsp32RotaryEncoder::disable()
 {
 	this->isEnabled = false;
 }
 
+// NOT USED - TO BE REMOVED
 bool AiEsp32RotaryEncoder::isEncoderButtonClicked(unsigned long maximumWaitMilliseconds)
 {
 	static bool wasTimeouted = false;
@@ -398,6 +414,7 @@ bool AiEsp32RotaryEncoder::isEncoderButtonClicked(unsigned long maximumWaitMilli
 	return true;
 }
 
+// NOT USED - TO BE REMOVED
 bool AiEsp32RotaryEncoder::isEncoderButtonDown()
 {
 	return digitalRead(encoderButtonPin) ? false : true;
